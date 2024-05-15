@@ -3,6 +3,8 @@ from langchain.vectorstores import DeepLake
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.llms import OpenAI
 from langchain.chains import RetrievalQA
+from langchain.agents import initialize_agent, Tool
+from langchain.agents import AgentType
 
 from dotenv import load_dotenv
 
@@ -35,10 +37,17 @@ docs = text_splitter.create_documents(texts)
 # create Deep Lake dataset
 # TODO: use your organization id here. (by default, org id is your username)
 my_activeloop_org_id = "ferdleon" 
-my_activeloop_dataset_name = "langchain_course_from_zero_to_hero"
+my_activeloop_dataset_name = "langchain_course_from_zero_to_hero1"
 dataset_path = f"hub://{my_activeloop_org_id}/{my_activeloop_dataset_name}"
 db = DeepLake(dataset_path=dataset_path, embedding_function=embeddings)
 
 # add documents to our Deep Lake dataset
 db.add_documents(docs)
+
+retrieval_qa = RetrievalQA.from_chain_type(
+	llm=llm,
+	chain_type="stuff",
+	retriever=db.as_retriever()
+)
+
 
