@@ -1,8 +1,13 @@
 # al-langchain
 LangChain &amp; Vector Databases in Production
 
-1. Create a virtual environment using the command python -m venv my_venv_name.
-2. Activate the virtual environment by executing source my_venv_name/bin/activate.
+1. Create a virtual environment using the command
+$ python -m venv my_venv_name.
+
+2. Activate the virtual environment by executing
+
+$ source my_venv_name/bin/activate.
+
 3. Install the required libraries:
     - langchain==0.0.208
     - deeplake==3.6.5
