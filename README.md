@@ -2,6 +2,7 @@
 LangChain &amp; Vector Databases in Production
 
 1. Create a virtual environment using the command
+
 $ python -m venv my_venv_name.
 
 2. Activate the virtual environment by executing
