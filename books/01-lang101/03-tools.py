@@ -19,7 +19,7 @@ os.environ["GOOGLE_CSE_ID"] = google_cse_id
 
 llm = OpenAI(model="gpt-3.5-turbo-instruct", temperature=0)
 
-# instantiate a  LLMChain specifically for text summarization.
+# instantiate a LLMChain specifically for text summarization.
 
 prompt = PromptTemplate(
     input_variables=["query"],
@@ -45,6 +45,7 @@ tools = [
 ]
 
 # agent that leverages two tools.
+
 agent = initialize_agent(
     tools,
     llm,
