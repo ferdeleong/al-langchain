@@ -1,9 +1,13 @@
-from langchain import OpenAI, PromptTemplate
+from langchain import OpenAI
 from langchain.chains import LLMChain
-from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 from langchain.chains.summarize import load_summarize_chain
 from langchain.document_loaders import PyPDFLoader
+
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
+from langchain.chat_models import ChatOpenAI
+
 
 from dotenv import load_dotenv
 
@@ -50,6 +54,7 @@ summarize_chain = load_summarize_chain(llm)
 
 prompt = PromptTemplate(template="Question: {question}\nAnswer:", input_variables=["question"])
 
+llm = OpenAI(model_name="gpt-3.5-turbo-1106", temperature=0)
 chain = LLMChain(llm=llm, prompt=prompt)
 
 chain.run("what is the meaning of life?")
