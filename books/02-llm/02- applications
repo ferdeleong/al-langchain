@@ -1,4 +1,7 @@
 from langchain import OpenAI, PromptTemplate
+from langchain.chains import LLMChain
+from langchain.chat_models import ChatOpenAI
+from langchain.llms import OpenAI
 from langchain.chains.summarize import load_summarize_chain
 from langchain.document_loaders import PyPDFLoader
 
@@ -8,13 +11,10 @@ import os
 
 load_dotenv()
 
-openai_api_key = os.getenv("OPENAI_API_KEY")
-openai_project_id = os.getenv("OPENAI_PROJECT_ID")
+os.getenv("OPENAI_API_KEY")
+os.getenv("OPENAI_PROJECT_ID")
 
-os.environ["OPENAI_API_KEY"] = openai_api_key
-os.environ["OPENAI_PROJECT_ID"] = openai_project_id
 
-from langchain.chat_models import ChatOpenAI
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     SystemMessagePromptTemplate,
@@ -41,9 +41,15 @@ llm = OpenAI(model_name="gpt-3.5-turbo-instruct", temperature=0)
 summarize_chain = load_summarize_chain(llm)
 
 # Load the document using PyPDFLoader
-document_loader = PyPDFLoader(file_path="path/to/your/pdf/file.pdf")
-document = document_loader.load()
+# document_loader = PyPDFLoader(file_path="path/to/your/pdf/file.pdf")
+# document = document_loader.load()
 
 # Summarize the document
-summary = summarize_chain(document)
-print(summary['output_text'])
+# summary = summarize_chain(document)
+# print(summary['output_text'])
+
+prompt = PromptTemplate(template="Question: {question}\nAnswer:", input_variables=["question"])
+
+chain = LLMChain(llm=llm, prompt=prompt)
+
+chain.run("what is the meaning of life?")
