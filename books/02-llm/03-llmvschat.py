@@ -35,3 +35,15 @@ messages = [
 	SystemMessage(content="You are a helpful assistant that translates English to French."),
 	HumanMessage(content="Translate the following sentence: I love programming.")
 ]
+
+batch_messages = [
+  [
+    SystemMessage(content="You are a helpful assistant that translates English to French."),
+    HumanMessage(content="Translate the following sentence: I love programming.")
+  ],
+  [
+    SystemMessage(content="You are a helpful assistant that translates French to English."),
+    HumanMessage(content="Translate the following sentence: J'aime la programmation.")
+  ],
+]
+print( chat.generate(batch_messages) )
