@@ -66,3 +66,10 @@ response = chain.run({})
 
 print("Color: purple")
 print("Emotion:", response)
+
+template = "Tell me something about {topic}."
+prompt = PromptTemplate(
+    input_variables=["topic"],
+    template=template,
+)
+prompt.format(topic="dogs")
