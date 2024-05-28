@@ -1,4 +1,5 @@
 from langchain.output_parsers import PydanticOutputParser, CommaSeparatedListOutputParser
+from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 from langchain.prompts import PromptTemplate
 from langchain.llms import OpenAI
 
@@ -101,3 +102,10 @@ model = OpenAI(model_name='gpt-3.5-turbo-instruct', temperature=0.0)
 # Send the Request
 output = model(model_input)
 parser.parse(output)
+
+response_schemas = [
+    ResponseSchema(name="words", description="A substitue word based on context"),
+    ResponseSchema(name="reasons", description="the reasoning of why this word fits the context.")
+]
+
+parser = StructuredOutputParser.from_response_schemas(response_schemas)
