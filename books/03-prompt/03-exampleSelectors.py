@@ -98,7 +98,7 @@ example_prompt = PromptTemplate(
     template=example_template
 )
 
-example_selector = LengthBasedExampleSelector(
+example_selector = LengthBasedExampleSelecto(
     examples=examples,
     example_prompt=example_prompt,
     max_length=25,

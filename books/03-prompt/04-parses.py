@@ -1,5 +1,6 @@
 from langchain.output_parsers import PydanticOutputParser, CommaSeparatedListOutputParser
 from langchain.output_parsers import StructuredOutputParser, ResponseSchema
+from langchain.output_parsers import OutputFixingParser
 from langchain.prompts import PromptTemplate
 from langchain.llms import OpenAI
 
@@ -109,3 +110,25 @@ response_schemas = [
 ]
 
 parser = StructuredOutputParser.from_response_schemas(response_schemas)
+
+# Define your desired data structure.
+class Suggestions(BaseModel):
+    words: List[str] = Field(description="list of substitue words based on context")
+    reasons: List[str] = Field(description="the reasoning of why this word fits the context")
+
+parser = PydanticOutputParser(pydantic_object=Suggestions)
+
+missformatted_output = '{"words": ["conduct", "manner"], "reasoning": ["refers to the way someone acts in a particular situation.", "refers to the way someone behaves in a particular situation."]}'
+
+parser.parse(missformatted_output)
+
+model = OpenAI(model_name='gpt-3.5-turbo-instruct', temperature=0.0)
+
+outputfixing_parser = OutputFixingParser.from_llm(parser=parser, llm=model)
+outputfixing_parser.parse(missformatted_output)
+
+missformatted_output = '{"words": ["conduct", "manner"]}'
+
+outputfixing_parser = OutputFixingParser.from_llm(parser=parser, llm=model)
+
+outputfixing_parser.parse(missformatted_output)
