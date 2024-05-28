@@ -1,57 +1,43 @@
-from langchain.output_parsers import PydanticOutputParser, CommaSeparatedListOutputParser
-from langchain.output_parsers import StructuredOutputParser, ResponseSchema
-from langchain.output_parsers import OutputFixingParser
-from langchain.prompts import PromptTemplate
-from langchain.llms import OpenAI
-
-from pydantic import BaseModel, Field, validator
-from typing import List
-
-from dotenv import load_dotenv
 import os
+from typing import List
+from dotenv import load_dotenv
+from pydantic import BaseModel, Field, validator
+from langchain.output_parsers import PydanticOutputParser, OutputFixingParser, RetryWithErrorOutputParser
+from langchain.prompts import PromptTemplate
+from langchain_community.llms import OpenAI
+from langchain.schema import HumanMessage
 
+# Load environment variables
 load_dotenv()
 
+# Ensure the API key is loaded
 api_key = os.getenv("OPENAI_API_KEY")
+assert api_key is not None, "OPENAI_API_KEY environment variable is not set."
 
-# Define your desired data structure.
+# Define the Pydantic model for the output
 class Suggestions(BaseModel):
-    words: List[str] = Field(description="list of substitue words based on context")
+    words: List[str] = Field(description="list of substitute words based on context")
+    reasons: List[str] = Field(description="the reasoning of why this word fits the context")
 
-    # Throw error in case of receiving a numbered-list from API
-    @validator('words')
+    # Validators
+    @validator('words', allow_reuse=True)
     def not_start_with_number(cls, field):
         for item in field:
             if item[0].isnumeric():
                 raise ValueError("The word can not start with numbers!")
         return field
 
+    @validator('reasons', allow_reuse=True)
+    def end_with_dot(cls, field):
+        for idx, item in enumerate(field):
+            if item[-1] != ".":
+                field[idx] += "."
+        return field
+
+# Set up the Pydantic output parser
 parser = PydanticOutputParser(pydantic_object=Suggestions)
 
-template = """
-Offer a list of suggestions to substitue the specified target_word based the presented context.
-{format_instructions}
-target_word={target_word}
-context={context}
-"""
-
-prompt = PromptTemplate(
-    template=template,
-    input_variables=["target_word", "context"],
-    partial_variables={"format_instructions": parser.get_format_instructions()}
-)
-
-model_input = prompt.format_prompt(
-			target_word="behaviour",
-			context="The behaviour of the students in the classroom was disruptive and made it difficult for the teacher to conduct the lesson."
-)
-
-model = OpenAI(model_name='gpt-3.5-turbo-instruct', temperature=0.0)
-
-output = model(model_input.to_string())
-
-parser.parse(output)
-
+# Define the prompt template
 template = """
 Offer a list of suggestions to substitute the specified target_word based on the presented context and the reasoning for each word.
 {format_instructions}
@@ -59,76 +45,40 @@ target_word={target_word}
 context={context}
 """
 
-class Suggestions(BaseModel):
-    words: List[str] = Field(description="list of substitue words based on context")
-    reasons: List[str] = Field(description="the reasoning of why this word fits the context")
-    
-    @validator('words')
-    def not_start_with_number(cls, field):
-      for item in field:
-        if item[0].isnumeric():
-          raise ValueError("The word can not start with numbers!")
-      return field
-    
-    # ensure every reasoning ends with a dot
-    @validator('reasons')
-    def end_with_dot(cls, field):
-      for idx, item in enumerate( field ):
-        if item[-1] != ".":
-          field[idx] += "."
-      return field
-    
-    parser = CommaSeparatedListOutputParser()
-
-# Prepare the Prompt
-template = """
-Offer a list of suggestions to substitute the word '{target_word}' based the presented the following text: {context}.
-{format_instructions}
-"""
-
 prompt = PromptTemplate(
     template=template,
     input_variables=["target_word", "context"],
     partial_variables={"format_instructions": parser.get_format_instructions()}
 )
 
-model_input = prompt.format(
-  target_word="behaviour",
-  context="The behaviour of the students in the classroom was disruptive and made it difficult for the teacher to conduct the lesson."
+# Create the model input
+model_input = prompt.format_prompt(
+    target_word="behaviour",
+    context="The behaviour of the students in the classroom was disruptive and made it difficult for the teacher to conduct the lesson."
 )
 
-# Loading OpenAI API
+# Initialize the OpenAI model
 model = OpenAI(model_name='gpt-3.5-turbo-instruct', temperature=0.0)
 
-# Send the Request
-output = model(model_input)
-parser.parse(output)
+# Generate the output from the model
+output = model(model_input.to_string())
 
-response_schemas = [
-    ResponseSchema(name="words", description="A substitue word based on context"),
-    ResponseSchema(name="reasons", description="the reasoning of why this word fits the context.")
-]
+# Parse the output
+parsed_output = parser.parse(output)
+print(parsed_output)
 
-parser = StructuredOutputParser.from_response_schemas(response_schemas)
-
-# Define your desired data structure.
-class Suggestions(BaseModel):
-    words: List[str] = Field(description="list of substitue words based on context")
-    reasons: List[str] = Field(description="the reasoning of why this word fits the context")
-
-parser = PydanticOutputParser(pydantic_object=Suggestions)
-
+# Example of handling misformatted output
 missformatted_output = '{"words": ["conduct", "manner"], "reasoning": ["refers to the way someone acts in a particular situation.", "refers to the way someone behaves in a particular situation."]}'
 
-parser.parse(missformatted_output)
-
-model = OpenAI(model_name='gpt-3.5-turbo-instruct', temperature=0.0)
-
+# Using OutputFixingParser to correct the output
 outputfixing_parser = OutputFixingParser.from_llm(parser=parser, llm=model)
-outputfixing_parser.parse(missformatted_output)
+fixed_output = outputfixing_parser.parse(missformatted_output)
+print(fixed_output)
 
+# Example of handling a more complex misformatted output
 missformatted_output = '{"words": ["conduct", "manner"]}'
 
-outputfixing_parser = OutputFixingParser.from_llm(parser=parser, llm=model)
-
-outputfixing_parser.parse(missformatted_output)
+# Using RetryWithErrorOutputParser to correct the output
+retry_parser = RetryWithErrorOutputParser.from_llm(parser=parser, llm=model)
+fixed_output_retry = retry_parser.parse_with_prompt(missformatted_output, model_input)
+print(fixed_output_retry)
